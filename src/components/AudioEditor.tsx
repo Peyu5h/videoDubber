@@ -1,10 +1,20 @@
-import React, { useState, useCallback, useEffect } from "react";
-import { AppShell, Button, Slider, Text, Group, Box } from "@mantine/core";
+import React, { useCallback, useEffect, useState, useRef } from "react";
+import {
+  Button,
+  Slider,
+  Group,
+  Text,
+  FileButton,
+  ActionIcon,
+} from "@mantine/core";
 import { Dropzone } from "@mantine/dropzone";
 import {
   IconPlayerPlay,
   IconPlayerPause,
   IconUpload,
+  IconDownload,
+  IconTrash,
+  IconVolume,
 } from "@tabler/icons-react";
 import { useVoiceVisualizer, VoiceVisualizer } from "react-voice-visualizer";
 import { formatTime } from "@/utils/functions";
@@ -14,20 +24,18 @@ interface AudioEditorProps {
 }
 
 export function AudioEditor({ audioFile }: AudioEditorProps) {
-  const [error, setError] = useState<string | null>(null);
+  const [loadedFile, setLoadedFile] = useState<File | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [volume, setVolume] = useState(1);
   const recorderControls = useVoiceVisualizer();
   const {
-    isRecordingInProgress,
-    isPausedRecording,
-    startRecording,
-    stopRecording,
-    togglePauseResume,
     duration,
     currentAudioTime,
-    isPausedRecordedAudio,
     setPreloadedAudioBlob,
     audioRef,
     clearCanvas,
+    recordedBlob,
+    togglePauseResume,
   } = recorderControls;
 
   const loadAudio = useCallback(
@@ -36,24 +44,23 @@ export function AudioEditor({ audioFile }: AudioEditorProps) {
         const arrayBuffer = await file.arrayBuffer();
         const blob = new Blob([arrayBuffer], { type: file.type });
         await setPreloadedAudioBlob(blob);
+        setLoadedFile(file);
       } catch (err) {
         console.error("Error loading audio:", err);
-        setError("Failed to load audio file. Please try again.");
       }
     },
     [setPreloadedAudioBlob],
   );
 
   useEffect(() => {
-    if (audioFile) {
+    if (audioFile && audioFile !== loadedFile) {
       loadAudio(audioFile);
     }
-  }, [audioFile, loadAudio]);
+  }, [audioFile, loadAudio, loadedFile]);
 
   const handleFileUpload = useCallback(
     async (files: File[]) => {
       if (files.length > 0) {
-        setError(null);
         clearCanvas();
         await loadAudio(files[0]);
       }
@@ -62,116 +69,126 @@ export function AudioEditor({ audioFile }: AudioEditorProps) {
   );
 
   const togglePlayPause = useCallback(() => {
-    if (isPausedRecordedAudio) {
-      togglePauseResume();
-    } else {
-      if (isRecordingInProgress) {
-        stopRecording();
-      } else {
-        startRecording();
-      }
-    }
-  }, [
-    isRecordingInProgress,
-    isPausedRecordedAudio,
-    startRecording,
-    stopRecording,
-    togglePauseResume,
-  ]);
+    togglePauseResume();
+    setIsPlaying((prev) => !prev);
+  }, [togglePauseResume]);
 
-  const handleSeek = (time: number) => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = time;
+  const handleDownload = () => {
+    if (recordedBlob) {
+      const url = URL.createObjectURL(recordedBlob);
+      const a = document.createElement("a");
+      a.style.display = "none";
+      a.href = url;
+      a.download = "audio_clip.wav";
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
     }
   };
 
+  const handleVolumeChange = (value: number) => {
+    setVolume(value);
+    if (audioRef.current) {
+      audioRef.current.volume = value;
+    }
+  };
+
+  useEffect(() => {
+    const handleKeyPress = (event: KeyboardEvent) => {
+      if (event.code === "Space") {
+        event.preventDefault();
+        togglePlayPause();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyPress);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+    };
+  }, [togglePlayPause]);
+
   return (
-    <AppShell className="bg-background-dark text-text-light">
-      <div className="flex h-screen flex-col">
-        <header className="flex items-center justify-between p-4">
-          <Text size="xl">Designing to Digital</Text>
-          <Button
-            variant="filled"
-            color="orange"
-            rightSection={<IconPlayerPlay size={14} />}
+    <div>
+      <header>
+        <Group>
+          <FileButton
+            onChange={(file) => file && handleFileUpload([file])}
+            accept="audio/*"
           >
-            Publish
-          </Button>
-        </header>
-
-        <main className="flex-grow p-4">
-          <div className="grid grid-cols-3 gap-4">
-            <div className="col-span-2">
-              <Box mb="md">
-                <Dropzone
-                  onDrop={handleFileUpload}
-                  accept={["audio/mpeg", "audio/wav"]}
-                  maxSize={30 * 1024 ** 2}
-                >
-                  <Group
-                    p="center"
-                    style={{ minHeight: 100, pointerEvents: "none" }}
-                  >
-                    <IconUpload size={30} stroke={1.5} />
-                    <div>
-                      <Text size="md" inline>
-                        Drag audio files here or click to select files
-                      </Text>
-                      <Text size="xs" color="dimmed" inline mt={7}>
-                        Attach one audio file, file should not exceed 30mb
-                      </Text>
-                    </div>
-                  </Group>
-                </Dropzone>
-              </Box>
-              {error && <Text color="red">{error}</Text>}
-              <VoiceVisualizer
-                controls={recorderControls}
-                height={200}
-                width="100%"
-                backgroundColor="transparent"
-                mainBarColor="#FF6B00"
-                secondaryBarColor="#7000FF"
-                speed={3}
-                barWidth={2}
-                gap={1}
-                rounded={5}
-                isControlPanelShown={false}
-                isDefaultUIShown={false}
-              />
-            </div>
-            <div className="col-span-1">{/* toDoo: general controls */}</div>
-          </div>
-        </main>
-
-        <footer className="p-4">
-          <Slider
-            value={currentAudioTime}
-            onChange={handleSeek}
-            max={duration}
-            className="mb-2"
-          />
-          <div className="flex items-center justify-between">
-            <Text>
-              {formatTime(currentAudioTime)} / {formatTime(duration)}
-            </Text>
-            <div className="flex items-center">
+            {(props) => (
               <Button
+                {...props}
+                leftSection={<IconUpload size={14} />}
                 variant="subtle"
-                className="mx-2"
-                onClick={togglePlayPause}
+                className="bg-primary text-text-light hover:bg-primary-hover"
               >
-                {isRecordingInProgress || !isPausedRecordedAudio ? (
-                  <IconPlayerPause size={20} />
-                ) : (
-                  <IconPlayerPlay size={20} />
-                )}
+                Upload Audio
               </Button>
-              {/* toDoo: volume slider */}
-            </div>
+            )}
+          </FileButton>
+          <Button
+            leftSection={<IconDownload size={14} />}
+            onClick={handleDownload}
+            disabled={!recordedBlob}
+          >
+            Download
+          </Button>
+        </Group>
+      </header>
+
+      <main className="flex-grow p-4">
+        <div className="grid grid-cols-3 gap-4">
+          <div className="col-span-2">
+            <VoiceVisualizer
+              controls={recorderControls}
+              height={200}
+              width="100%"
+              backgroundColor="transparent"
+              mainBarColor="#FF6B00"
+              secondaryBarColor="#994000"
+              speed={3}
+              barWidth={2}
+              gap={1}
+              rounded={5}
+              isControlPanelShown={false}
+              isDefaultUIShown={false}
+            />
           </div>
-        </footer>
-      </div>
-    </AppShell>
+        </div>
+      </main>
+
+      <footer className="p-4">
+        <Group align="center">
+          <Text>
+            {formatTime(currentAudioTime)} / {formatTime(duration)}
+          </Text>
+          <Group>
+            <Button
+              className="border-orange-500/50 bg-orange-500/10"
+              variant="subtle"
+              onClick={togglePlayPause}
+            >
+              {isPlaying ? (
+                <IconPlayerPause size={20} />
+              ) : (
+                <IconPlayerPlay size={20} />
+              )}
+            </Button>
+            <Group>
+              <IconVolume size={20} />
+              <Slider
+                value={volume}
+                onChange={handleVolumeChange}
+                min={0}
+                max={1}
+                step={0.01}
+                styles={{ root: { width: 100 } }}
+              />
+            </Group>
+          </Group>
+        </Group>
+      </footer>
+    </div>
   );
 }

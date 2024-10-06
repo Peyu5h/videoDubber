@@ -4,28 +4,26 @@ import {
   type MantineColorsTuple,
 } from "@mantine/core";
 
-const createColorTuple = (color: string): MantineColorsTuple => [
-  color,
-  color,
-  color,
-  color,
-  color,
-  color,
-  color,
-  color,
-  color,
-  color,
-];
-
-const theme = createTheme({
+const orangeTheme = createTheme({
+  primaryColor: "orange",
   colors: {
-    "background-dark": createColorTuple("#1A1B1E"),
-    "track-orange": createColorTuple("#FF6B00"),
-    "track-purple": createColorTuple("#7000FF"),
-    "track-pink": createColorTuple("#FF00D6"),
+    orange: [
+      "#FFF4E6",
+      "#FFE8CC",
+      "#FFD8A8",
+      "#FFC078",
+      "#FFA94D",
+      "#FF922B",
+      "#FD7E14",
+      "#F76707",
+      "#E8590C",
+      "#D9480F",
+    ],
   },
 });
 
 export function MantineProvider({ children }: { children: React.ReactNode }) {
-  return <BaseMantineProvider theme={theme}>{children}</BaseMantineProvider>;
+  return (
+    <BaseMantineProvider theme={orangeTheme}>{children}</BaseMantineProvider>
+  );
 }

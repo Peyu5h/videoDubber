@@ -36,7 +36,7 @@ export default function LandingPage({ onFileSelect }: LandingPageProps) {
         transition={{ duration: 0.5 }}
       >
         <Box my="xl">
-          <Text ta="center" size="xl" fw={700} mb="lg">
+          <Text ta="center" size="xl" fw={700} mb="lg" color="orange">
             Audio Cutter
           </Text>
           <Text ta="center" color="dimmed" mb="xl">
@@ -48,20 +48,32 @@ export default function LandingPage({ onFileSelect }: LandingPageProps) {
             maxSize={30 * 1024 ** 2}
             accept={["audio/*"]}
             multiple={false}
+            styles={(theme) => ({
+              root: {
+                borderColor: theme.colors.orange[6],
+                "&:hover": {
+                  borderColor: theme.colors.orange[8],
+                },
+              },
+            })}
           >
             <Group style={{ minHeight: 220, pointerEvents: "none" }}>
               <Dropzone.Accept>
                 <IconUpload
                   size={50}
                   stroke={1.5}
-                  color={theme.colors["track-orange"][6]}
+                  color={theme.colors.orange[6]}
                 />
               </Dropzone.Accept>
               <Dropzone.Reject>
                 <IconX size={50} stroke={1.5} color={theme.colors.red[6]} />
               </Dropzone.Reject>
               <Dropzone.Idle>
-                <IconFile size={50} stroke={1.5} />
+                <IconFile
+                  size={50}
+                  stroke={1.5}
+                  color={theme.colors.orange[6]}
+                />
               </Dropzone.Idle>
 
               <div>

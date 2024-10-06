@@ -12,7 +12,9 @@ export default function Home() {
   };
 
   return audioFile ? (
-    <AudioEditor audioFile={audioFile} />
+    <div className="w-full">
+      <AudioEditor audioFile={audioFile} />
+    </div>
   ) : (
     <LandingPage onFileSelect={handleFileSelect} />
   );
