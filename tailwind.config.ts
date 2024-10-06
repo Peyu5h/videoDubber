@@ -9,11 +9,17 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
+        "background-dark": "#1A1B1E",
+        "track-orange": "#FF6B00",
+        "track-purple": "#7000FF",
+        "track-pink": "#FF00D6",
+        "text-light": "#FFFFFF",
+        "text-secondary": "#909296",
+        "button-primary": "#FF6B00",
       },
     },
   },
   plugins: [],
 };
+
 export default config;
