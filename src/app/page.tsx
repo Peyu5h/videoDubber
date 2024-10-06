@@ -12,7 +12,7 @@ export default function Home() {
   };
 
   return audioFile ? (
-    <div className="w-full">
+    <div className="h-screen w-full">
       <AudioEditor audioFile={audioFile} />
     </div>
   ) : (
