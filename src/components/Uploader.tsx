@@ -11,11 +11,11 @@ import { Dropzone, FileWithPath } from "@mantine/dropzone";
 import { IconUpload, IconX, IconFile } from "@tabler/icons-react";
 import { motion } from "framer-motion";
 
-interface LandingPageProps {
+interface UploaderProps {
   onFileSelect: (file: File) => void;
 }
 
-export default function UploadPage({ onFileSelect }: LandingPageProps) {
+export default function Uploader({ onFileSelect }: UploaderProps) {
   const theme = useMantineTheme();
   const [error, setError] = useState<string | null>(null);
 

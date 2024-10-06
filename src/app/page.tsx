@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { AudioEditor } from "@/components/AudioEditor";
+import Uploader from "@/components/Uploader";
 
-import UploadPage from "@/components/uploadPage";
 export default function Home() {
   const [audioFile, setAudioFile] = useState<File | null>(null);
 
@@ -16,6 +16,6 @@ export default function Home() {
       <AudioEditor audioFile={audioFile} />
     </div>
   ) : (
-    <UploadPage onFileSelect={handleFileSelect} />
+    <Uploader onFileSelect={handleFileSelect} />
   );
 }
