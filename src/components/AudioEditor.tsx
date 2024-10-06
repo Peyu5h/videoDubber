@@ -1,5 +1,12 @@
 import React, { useCallback, useEffect, useState, useRef } from "react";
-import { Button, Slider, Group, Text, RangeSlider, Stack } from "@mantine/core";
+import {
+  Button,
+  Slider,
+  Group,
+  Text,
+  RangeSlider,
+  Loader,
+} from "@mantine/core";
 import {
   IconPlayerPlay,
   IconPlayerPause,
@@ -25,10 +32,10 @@ export function AudioEditor({ audioFile }: AudioEditorProps) {
     currentAudioTime,
     setPreloadedAudioBlob,
     audioRef,
-    clearCanvas,
     recordedBlob,
     togglePauseResume,
   } = recorderControls;
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const loadAudio = useCallback(
     async (file: File) => {
@@ -39,7 +46,7 @@ export function AudioEditor({ audioFile }: AudioEditorProps) {
         setLoadedFile(file);
         setTrimRange([0, 100]);
       } catch (err) {
-        console.error("Error loading audio:", err);
+        console.error("Error:", err);
       }
     },
     [setPreloadedAudioBlob],
@@ -53,7 +60,7 @@ export function AudioEditor({ audioFile }: AudioEditorProps) {
 
   const handleTrimRangeChange = useCallback(
     (range: [number, number]) => {
-      const minTrimDuration = 5; // 5 seconds minimum
+      const minTrimDuration = 5;
       if (duration) {
         const minRangePercentage = (minTrimDuration / duration) * 100;
         const [start, end] = range;
@@ -102,32 +109,39 @@ export function AudioEditor({ audioFile }: AudioEditorProps) {
 
   const handleTrim = async () => {
     if (!audioRef.current || !recordedBlob) return;
+    setIsDownloading(true);
 
-    const audioContext = new AudioContext();
-    const audioBuffer = await audioContext.decodeAudioData(
-      await recordedBlob.arrayBuffer(),
-    );
+    try {
+      const audioContext = new AudioContext();
+      const audioBuffer = await audioContext.decodeAudioData(
+        await recordedBlob.arrayBuffer(),
+      );
 
-    const startTime = (trimRange[0] / 100) * audioBuffer.duration;
-    const endTime = (trimRange[1] / 100) * audioBuffer.duration;
+      const startTime = (trimRange[0] / 100) * audioBuffer.duration;
+      const endTime = (trimRange[1] / 100) * audioBuffer.duration;
 
-    const trimmedBuffer = audioContext.createBuffer(
-      audioBuffer.numberOfChannels,
-      Math.floor((endTime - startTime) * audioBuffer.sampleRate),
-      audioBuffer.sampleRate,
-    );
+      const trimmedBuffer = audioContext.createBuffer(
+        audioBuffer.numberOfChannels,
+        Math.floor((endTime - startTime) * audioBuffer.sampleRate),
+        audioBuffer.sampleRate,
+      );
 
-    for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
-      const channelData = audioBuffer.getChannelData(channel);
-      const trimmedData = trimmedBuffer.getChannelData(channel);
-      for (let i = 0; i < trimmedBuffer.length; i++) {
-        trimmedData[i] =
-          channelData[i + Math.floor(startTime * audioBuffer.sampleRate)];
+      for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
+        const channelData = audioBuffer.getChannelData(channel);
+        const trimmedData = trimmedBuffer.getChannelData(channel);
+        for (let i = 0; i < trimmedBuffer.length; i++) {
+          trimmedData[i] =
+            channelData[i + Math.floor(startTime * audioBuffer.sampleRate)];
+        }
       }
-    }
 
-    const trimmedBlob = audioBufferToWav(trimmedBuffer);
-    downloadBlob(trimmedBlob, "trimmed_audio.wav");
+      const trimmedBlob = audioBufferToWav(trimmedBuffer);
+      await downloadBlob(trimmedBlob, "trimed_audio.wav");
+    } catch (error) {
+      console.error("Error:", error);
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const audioBufferToWav = (buffer: AudioBuffer): Blob => {
@@ -176,16 +190,30 @@ export function AudioEditor({ audioFile }: AudioEditorProps) {
     }
   };
 
-  const downloadBlob = (blob: Blob, filename: string) => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    document.body.appendChild(a);
-    a.style.display = "none";
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-    document.body.removeChild(a);
+  const downloadBlob = (blob: Blob, filename: string): Promise<void> => {
+    return new Promise((resolve) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.style.display = "none";
+      a.href = url;
+      a.download = filename;
+
+      let removed = false;
+
+      const cleanup = () => {
+        if (!removed) {
+          removed = true;
+          URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+        }
+        resolve();
+      };
+
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(cleanup, 100);
+      setTimeout(cleanup, 1000);
+    });
   };
 
   const handleVolumeChange = (value: number) => {
@@ -277,15 +305,16 @@ export function AudioEditor({ audioFile }: AudioEditorProps) {
             </div>
           </div>
           <Button
-            leftSection={<IconCut size={20} />}
+            leftSection={
+              isDownloading ? <Loader size="xs" /> : <IconCut size={20} />
+            }
             onClick={handleTrim}
             variant="subtle"
-            //   w="100%"
             color="orange"
-            disabled={!recordedBlob}
+            disabled={!recordedBlob || isDownloading}
             className="w-full border-[1px] border-orange-500/50 bg-orange-500/10"
           >
-            Download
+            {isDownloading ? "Downloading..." : "Download"}
           </Button>
         </div>
       </div>
