@@ -16,6 +16,7 @@ import {
 } from "@tabler/icons-react";
 import { useVoiceVisualizer, VoiceVisualizer } from "react-voice-visualizer";
 import { formatTime } from "@/utils/functions";
+import { saveAs } from "file-saver";
 
 interface AudioEditorProps {
   audioFile: File | null;
@@ -135,8 +136,8 @@ export function AudioEditor({ audioFile }: AudioEditorProps) {
         }
       }
 
-      const trimmedBlob = audioBufferToWav(trimmedBuffer);
-      await downloadBlob(trimmedBlob, "trimed_audio.wav");
+      const trimmedBlob = await audioBufferToWav(trimmedBuffer);
+      saveAs(trimmedBlob, "trimmed_audio.wav");
     } catch (error) {
       console.error("Error:", error);
     } finally {
@@ -144,75 +145,33 @@ export function AudioEditor({ audioFile }: AudioEditorProps) {
     }
   };
 
-  const audioBufferToWav = (buffer: AudioBuffer): Blob => {
-    const numberOfChannels = buffer.numberOfChannels;
-    const length = buffer.length * numberOfChannels * 2;
-    const outputBuffer = new ArrayBuffer(44 + length);
-    const view = new DataView(outputBuffer);
-    const sampleRate = buffer.sampleRate;
+  const audioBufferToWav = async (buffer: AudioBuffer): Promise<Blob> => {
+    const worker = new Worker(
+      new URL("../utils/audioBufferToWav.worker.ts", import.meta.url),
+      { type: "module" },
+    );
 
-    writeString(view, 0, "RIFF");
-    view.setUint32(4, 36 + length, true);
-    writeString(view, 8, "WAVE");
-    writeString(view, 12, "fmt ");
-    view.setUint32(16, 16, true);
-    view.setUint16(20, 1, true);
-    view.setUint16(22, numberOfChannels, true);
-    view.setUint32(24, sampleRate, true);
-    view.setUint32(28, sampleRate * numberOfChannels * 2, true);
-    view.setUint16(32, numberOfChannels * 2, true);
-    view.setUint16(34, 16, true);
-    writeString(view, 36, "data");
-    view.setUint32(40, length, true);
-
-    let offset = 44;
-    for (let i = 0; i < buffer.length; i++) {
-      for (let channel = 0; channel < numberOfChannels; channel++) {
-        const sample = Math.max(
-          -1,
-          Math.min(1, buffer.getChannelData(channel)[i]),
-        );
-        view.setInt16(
-          offset,
-          sample < 0 ? sample * 0x8000 : sample * 0x7fff,
-          true,
-        );
-        offset += 2;
-      }
-    }
-
-    return new Blob([outputBuffer], { type: "audio/wav" });
-  };
-
-  const writeString = (view: DataView, offset: number, string: string) => {
-    for (let i = 0; i < string.length; i++) {
-      view.setUint8(offset + i, string.charCodeAt(i));
-    }
-  };
-
-  const downloadBlob = (blob: Blob, filename: string): Promise<void> => {
-    return new Promise((resolve) => {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.style.display = "none";
-      a.href = url;
-      a.download = filename;
-
-      let removed = false;
-
-      const cleanup = () => {
-        if (!removed) {
-          removed = true;
-          URL.revokeObjectURL(url);
-          document.body.removeChild(a);
+    return new Promise((resolve, reject) => {
+      worker.onmessage = (e) => {
+        if (e.data.error) {
+          reject(new Error(e.data.error));
+        } else {
+          resolve(e.data);
         }
-        resolve();
       };
 
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(cleanup, 100);
-      setTimeout(cleanup, 1000);
+      const channelData = [];
+      for (let i = 0; i < buffer.numberOfChannels; i++) {
+        channelData.push(buffer.getChannelData(i));
+      }
+
+      worker.postMessage(
+        {
+          channels: channelData,
+          sampleRate: buffer.sampleRate,
+        },
+        channelData.map((data) => data.buffer),
+      );
     });
   };
 
