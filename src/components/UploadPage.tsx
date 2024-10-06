@@ -15,7 +15,7 @@ interface LandingPageProps {
   onFileSelect: (file: File) => void;
 }
 
-export default function LandingPage({ onFileSelect }: LandingPageProps) {
+export default function UploadPage({ onFileSelect }: LandingPageProps) {
   const theme = useMantineTheme();
   const [error, setError] = useState<string | null>(null);
 
@@ -29,17 +29,17 @@ export default function LandingPage({ onFileSelect }: LandingPageProps) {
   };
 
   return (
-    <Container size="sm">
+    <Container className="flex h-screen items-center justify-center">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
         <Box my="xl">
-          <Text ta="center" size="xl" fw={700} mb="lg" color="orange">
+          <Text className="text-center text-5xl font-black text-orange-500">
             Audio Cutter
           </Text>
-          <Text ta="center" color="dimmed" mb="xl">
+          <Text className="text-md mb-8 mt-2 text-center text-gray-500">
             Free editor to trim and cut any audio file online
           </Text>
           <Dropzone
@@ -48,22 +48,14 @@ export default function LandingPage({ onFileSelect }: LandingPageProps) {
             maxSize={30 * 1024 ** 2}
             accept={["audio/*"]}
             multiple={false}
-            styles={(theme) => ({
-              root: {
-                borderColor: theme.colors.orange[6],
-                "&:hover": {
-                  borderColor: theme.colors.orange[8],
-                },
-              },
-            })}
+            className="flex items-center justify-center rounded-lg border-[2px] border-orange-500/50 bg-transparent text-white hover:bg-transparent"
           >
-            <Group style={{ minHeight: 220, pointerEvents: "none" }}>
+            <Group
+              className="p-4"
+              style={{ minHeight: 220, pointerEvents: "none" }}
+            >
               <Dropzone.Accept>
-                <IconUpload
-                  size={50}
-                  stroke={1.5}
-                  color={theme.colors.orange[6]}
-                />
+                <IconUpload size={50} stroke={1.5} />
               </Dropzone.Accept>
               <Dropzone.Reject>
                 <IconX size={50} stroke={1.5} color={theme.colors.red[6]} />
@@ -80,14 +72,14 @@ export default function LandingPage({ onFileSelect }: LandingPageProps) {
                 <Text size="xl" inline>
                   Drag audio files here or click to select files
                 </Text>
-                <Text size="sm" color="dimmed" inline mt={7}>
+                <Text size="sm" c="dimmed" inline mt={7}>
                   Attach one audio file, file should not exceed 30mb
                 </Text>
               </div>
             </Group>
           </Dropzone>
           {error && (
-            <Text color="red" ta="center" mt="sm">
+            <Text ta="center" mt="sm">
               {error}
             </Text>
           )}

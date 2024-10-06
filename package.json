@@ -15,6 +15,7 @@
     "@mantine/hooks": "^7.13.2",
     "@tabler/icons-react": "^3.19.0",
     "@wavesurfer/react": "^1.0.7",
+    "file-saver": "^2.0.5",
     "framer-motion": "^11.11.1",
     "next": "14.2.14",
     "postcss-preset-mantine": "^1.17.0",

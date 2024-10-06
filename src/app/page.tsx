@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { AudioEditor } from "@/components/AudioEditor";
-import LandingPage from "@/components/LandingPage/LandingPage";
+import UploadPage from "@/components/uploadPage";
 
 export default function Home() {
   const [audioFile, setAudioFile] = useState<File | null>(null);
@@ -16,6 +16,6 @@ export default function Home() {
       <AudioEditor audioFile={audioFile} />
     </div>
   ) : (
-    <LandingPage onFileSelect={handleFileSelect} />
+    <UploadPage onFileSelect={handleFileSelect} />
   );
 }
