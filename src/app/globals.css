@@ -25,3 +25,7 @@ body {
     text-wrap: balance;
   }
 }
+
+.cursor-ew-resize {
+  cursor: ew-resize;
+}

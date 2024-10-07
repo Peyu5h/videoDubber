@@ -13,7 +13,9 @@
     "@mantine/core": "^7.13.2",
     "@mantine/dropzone": "^7.13.2",
     "@mantine/hooks": "^7.13.2",
+    "@mantine/notifications": "^7.13.2",
     "@tabler/icons-react": "^3.19.0",
+    "@types/react-resizable": "^3.0.8",
     "@wavesurfer/react": "^1.0.7",
     "file-saver": "^2.0.5",
     "framer-motion": "^11.11.1",
@@ -24,6 +26,7 @@
     "react": "^18",
     "react-audio-visualize": "^1.2.0",
     "react-dom": "^18",
+    "react-resizable": "^3.0.5",
     "react-voice-visualizer": "^2.0.4",
     "wavesurfer.js": "^7.8.6"
   },
