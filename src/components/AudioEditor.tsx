@@ -35,7 +35,7 @@ interface AudioEditorProps {
 export function AudioEditor({ audioFile }: AudioEditorProps) {
   const [loadedFile, setLoadedFile] = useState<File | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [volum, setVolum] = useState(1);
+  const [volum, setVolum] = useState(100);
   const [trimRng, setTrimRng] = useState<[number, number]>([0, 100]);
   const recorderControls = useVoiceVisualizer();
   const {
@@ -290,7 +290,7 @@ export function AudioEditor({ audioFile }: AudioEditorProps) {
       console.error("Err:", error);
       showNotification({
         title: "Error",
-        message: "Failed to remove",
+        message: "Pls select a section first",
         color: "red",
       });
     } finally {
